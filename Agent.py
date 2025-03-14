@@ -159,7 +159,7 @@ class Agent:
                     
 
 
-    def evaluate(self, eval_env, n_eval_episodes=30, max_episode_length=150):
+    def evaluate(self, eval_env, n_eval_episodes=30, max_episode_length=500):
         returns = []  # List to store total reward for each episode
         for i in range(n_eval_episodes):
             # Reset the environment; for Gymnasium, reset returns (observation, info)

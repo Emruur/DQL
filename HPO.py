@@ -185,7 +185,21 @@ def Tune_Target_Network():
     pd.DataFrame(results).to_csv("target_network_tuning_results.csv", index=False)
     print("Results saved to target_network_tuning_results.csv")
 
-# ✅ Run tuning only if executed directly
-if __name__ == "__main__":
-    Tune_Target_Network()
+import argparse
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tune", type=str, choices=["Target_Network", "Replay_Buffer", "HPO_vanilla"],
+                        help="Select which tuning function to run.")
+    args = parser.parse_args()
+    
+    if args.tune == "Target_Network":
+        Tune_Target_Network()
+    elif args.tune == "Replay_Buffer":
+        Tune_Replay_Buffer()
+    elif args.tune == "HPO_vanilla":
+        HPO_vanilla()
+    else:
+        print("No tuning function selected. Exiting.")
 
+if __name__ == "__main__":
+    main()

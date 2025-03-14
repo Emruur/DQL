@@ -2,9 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import itertools
 
-def analyze_vanilla():
+def analyze_vanilla(filename):
     # Read the CSV file
-    df = pd.read_csv("grid_search_results.csv")
+    df = pd.read_csv(filename)
 
     # Identify the best performing configuration based on avg_return
     best_config = df.loc[df['avg_return'].idxmax()]
@@ -111,6 +111,22 @@ def Analyze_Replay_Buffer_Tuning(csv_filename="report/Tunes_1/replay_buffer_tuni
     # Show plot
     plt.show()
 
-# ✅ Run analysis only if executed directly
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--analysis", type=str, choices=["Replay_Buffer_Tuning", "vanilla"],
+                        help="Select which analysis function to run.")
+    parser.add_argument("--file", type=str, required=True, 
+                        help="Specify the filename for analysis.")
+    args = parser.parse_args()
+    
+    if args.analysis == "Replay_Buffer_Tuning":
+        Analyze_Replay_Buffer_Tuning(args.file)
+    elif args.analysis == "vanilla":
+        analyze_vanilla(args.file)
+    else:
+        print("No valid analysis function selected. Exiting.")
+
 if __name__ == "__main__":
-    Analyze_Replay_Buffer_Tuning()
+    main()
