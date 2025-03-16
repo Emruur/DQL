@@ -20,9 +20,16 @@ class ReplayBuffer:
         self.buffer.append((state, action, reward, next_state, done))
 
     def sample(self):
-        batch = random.sample(self.buffer, self.batch_size)
-        states, actions, rewards, next_states, dones = zip(*batch)
+        # If batch_size is a fractional value, treat it as a probability to return one sample.
+        if self.batch_size < 1:
+            if random.random() < self.batch_size:
+                batch = random.sample(self.buffer, 1)
+            else:
+                return None  # or return (np.array([]), np.array([]), np.array([], dtype=np.float32), np.array([]), np.array([], dtype=np.uint8))
+        else:
+            batch = random.sample(self.buffer, self.batch_size)
         
+        states, actions, rewards, next_states, dones = zip(*batch)
         return (
             np.array(states),
             np.array(actions),
@@ -30,6 +37,7 @@ class ReplayBuffer:
             np.array(next_states),
             np.array(dones, dtype=np.uint8)
         )
+
 
     def ready(self):
 
@@ -40,7 +48,7 @@ class ReplayBuffer:
 
 
 class Agent:
-    def __init__(self, learning_rate, gamma, n_actions=2, num_layers= 2, hidden_dim= 16, num_hidden= 1, replay_buffer= False, rb_capacity= 1000, rb_batch_size= 4, target_network= False, target_updates= 100):
+    def __init__(self, learning_rate, gamma, n_actions=2, num_layers= 2, hidden_dim= 16, replay_buffer= False, rb_capacity= 1000, rb_batch_size= 4, target_network= False, target_updates= 100):
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.n_actions = n_actions
@@ -132,7 +140,10 @@ class Agent:
             self.buffer.store(s, a, r, s_next, done)
 
             if self.buffer.ready():
-                states, actions, rewards, next_states, dones = self.buffer.sample()
+                samples= self.buffer.sample()
+                if not samples:
+                    return
+                states, actions, rewards, next_states, dones = samples
 
                 # Compute Q-learning targets for batch
                 targets = np.copy(rewards)  # Start with current rewards

@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import time
+import random
 
 
-def DQL(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot= True,eval_interval=500, replay_buffer= False, rb_capacity= 1000, rb_batch_size= 4, target_network= False, target_updates= 100, hidden_dim= 16, num_hidden= 1):
+def DQL(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot= True,eval_interval=500, replay_buffer= False, rb_capacity= 1000, rb_batch_size= 4, target_network= False, target_updates= 100, hidden_dim= 16, num_hidden= 1, update_data_ratio= 1):
     ''' runs a single repetition of q_learning
     Return: rewards, a vector with the observed rewards at each timestep ''' 
     
@@ -20,12 +21,13 @@ def DQL(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=
         env = gym.make("CartPole-v1", render_mode="rgb_array", max_episode_steps=500)
 
     eval_env = gym.make("CartPole-v1", render_mode="rgb_array", max_episode_steps=500)
-    agent= Agent(learning_rate=learning_rate, gamma=gamma, replay_buffer=replay_buffer, rb_capacity= rb_capacity, rb_batch_size= rb_batch_size, target_network=target_network, target_updates=target_updates)
+    agent= Agent(learning_rate=learning_rate, gamma=gamma, replay_buffer=replay_buffer, rb_capacity= rb_capacity, rb_batch_size= rb_batch_size, target_network=target_network, target_updates=target_updates, num_layers= num_hidden, hidden_dim= hidden_dim)
     eval_timesteps = []
     eval_returns = []
     
     # TO DO: Write your Q-learning algorithm here!
     s, info = env.reset()
+    experiences= []
     for i in range(n_timesteps):
         a= agent.select_action(s, policy, epsilon,temp)
         s_next, r, done, truncated, info = env.step(a)
@@ -47,13 +49,12 @@ def DQL(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=
     eval_env.close()
     return np.array(eval_returns), np.array(eval_timesteps) 
 
-
-
-
-
-
-
-
+import argparse
+import os
+import time
+import numpy as np
+import pandas as pd
+# from your_dql_module import DQL  # Ensure that DQL is imported from your module
 
 def main():
     parser = argparse.ArgumentParser()
@@ -61,28 +62,36 @@ def main():
                         help="Select the configuration to run. If not provided, all configurations will be run.")
     args = parser.parse_args()
 
-    # Create results directory if not exists
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
 
-    n_runs = 1
+    n_runs = 5
     n_timesteps = 1000000
     eval_interval = 250
 
+    # Initial hyperparameters (overwritten below)
     gamma = 0.9
     learning_rate = 0.01
-    hidden_dim = 8
-    num_hidden_layers = 4
-    policy = "softmax"
+    hidden_dim = 32
+    num_hidden_layers = 2
+    policy = "egreedy"
     epsilon = 0.1
-    temp = 2.0
+
+    temp = 20
+
+    # Updated hyperparameters
+    learning_rate = 0.005
+    gamma = 0.99
+    hidden_dim = 64
+    num_hidden_layers = 2
+    epsilon = 0.2
 
     ## Replay Buffer Params
-    capacity = 5000
-    batch_size = 32
+    capacity = 32
+    batch_size = 8
 
     ## Target Q Params
-    target_updates = 50
+    target_updates = 25
 
     configs = {
         "Naive": (False, False),
@@ -91,69 +100,60 @@ def main():
         "Both": (True, True),
     }
 
-    results = {}
-
+    # If a specific config is provided via command line, only run that one; otherwise, run all.
     selected_configs = {args.config: configs[args.config]} if args.config else configs
 
     for config_name, (replay_buffer, target_network) in selected_configs.items():
-        all_returns = []
-        all_timesteps = None  # assume timesteps are consistent across runs
+        print(f"\nProcessing configuration: {config_name}")
+        run_data_list = []
+        all_timesteps = None
 
-        for i in range(n_runs):
-            start_time = time.time()  # Start timing
-            
-            returns, timesteps = DQL(n_timesteps, learning_rate, gamma, policy, epsilon, temp, 
-                                     False, eval_interval, replay_buffer=replay_buffer, 
-                                     rb_capacity=capacity, rb_batch_size=batch_size, 
-                                     target_network=target_network, target_updates=target_updates, 
-                                     hidden_dim=hidden_dim, num_hidden=num_hidden_layers)
+        # Loop over each run for the configuration
+        for run in range(1, n_runs + 1):
+            run_csv_filename = os.path.join(results_dir, f"{config_name.replace(' ', '_').lower()}_run{run}.csv")
+            if os.path.exists(run_csv_filename):
+                print(f"CSV file for config '{config_name}' run {run} exists, skipping training for this run.")
+                df = pd.read_csv(run_csv_filename)
+                run_data_list.append(df["return"].to_numpy())
+                if all_timesteps is None:
+                    all_timesteps = df["timesteps"].to_numpy()
+                continue
 
-            end_time = time.time()  # End timing
+            start_time = time.time()
+            # Run the DQL training for the given configuration and run.
+            returns, timesteps = DQL(n_timesteps, learning_rate, gamma, policy, epsilon, temp,
+                                       False, eval_interval, replay_buffer=replay_buffer,
+                                       rb_capacity=capacity, rb_batch_size=batch_size,
+                                       target_network=target_network, target_updates=target_updates,
+                                       hidden_dim=hidden_dim, num_hidden=num_hidden_layers)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Run {run} for config '{config_name}' completed in {elapsed_time:.2f} seconds")
 
-            all_returns.append(returns)
-            elapsed_time = end_time - start_time  # Compute elapsed time
-            print(f"Run {i} config {config_name} completed in {elapsed_time:.2f} seconds")
-
+            # Save the CSV file for this run.
+            df_run = pd.DataFrame({"timesteps": timesteps, "return": returns})
+            df_run.to_csv(run_csv_filename, index=False)
+            run_data_list.append(np.array(returns))
             if all_timesteps is None:
-                all_timesteps = timesteps
+                all_timesteps = np.array(timesteps)
 
-        all_returns = np.array(all_returns)  # shape: (n_runs, len(timesteps))
-
-        # Compute the mean and standard deviation (for each timestep) across runs
-        mean_returns = np.mean(all_returns, axis=0)
-        std_returns = np.std(all_returns, axis=0)
-        results[config_name] = (all_timesteps, mean_returns, std_returns)
-        
-        # Compute Area Under the Curve (AOC) using the trapezoidal rule
-        aoc = np.trapz(mean_returns, x=all_timesteps)
-        # Normalize the AOC given y ranges from 0 to 150 and x ranges from 0 to last timestep
-        max_possible_area = 500 * all_timesteps[-1]
-        normalized_aoc = aoc / max_possible_area
-
-        # Plot individual graphs
-        plt.figure(figsize=(10, 6))
-        plt.plot(all_timesteps, mean_returns, label="Mean Return")
-        plt.fill_between(all_timesteps, mean_returns - std_returns, mean_returns + std_returns,
-                         color='gray', alpha=0.3, label="± 1 STD")
-        plt.xlabel("Timesteps")
-        plt.ylabel("Evaluation Return")
-        plt.title(f"{config_name} - Mean Evaluation Return with Std Bound (Max: {max(mean_returns):.2f}, Norm AOC: {normalized_aoc:.2f})")
-        plt.legend()
-        plt.savefig(os.path.join(results_dir, f"{config_name.replace(' ', '_').lower()}.png"))
-        plt.close()
-
-    # Plot all means in a single graph (if running multiple configs)
-    if len(selected_configs) > 1:
-        plt.figure(figsize=(10, 6))
-        for config_name, (timesteps, mean_returns, _) in results.items():
-            plt.plot(timesteps, mean_returns, label=config_name)
-
-        plt.xlabel("Timesteps")
-        plt.ylabel("Evaluation Return")
-        plt.title("Comparison of Mean Evaluation Returns Across Configurations")
-        plt.legend()
-        plt.savefig(os.path.join(results_dir, "comparison.png"))
-        plt.close()
+        # After all runs are completed (or skipped), create a combined CSV.
+        combined_csv_filename = os.path.join(results_dir, f"{config_name.replace(' ', '_').lower()}_combined.csv")
+        if os.path.exists(combined_csv_filename):
+            print(f"Combined CSV for config '{config_name}' exists, skipping combined generation.")
+        else:
+            run_data_array = np.array(run_data_list)  # Shape: (n_runs, len(timesteps))
+            mean_returns = np.mean(run_data_array, axis=0)
+            std_returns = np.std(run_data_array, axis=0)
+            combined_data = {"timesteps": all_timesteps}
+            for i in range(n_runs):
+                combined_data[f"run_{i+1}"] = run_data_array[i]
+            combined_data["mean_return"] = mean_returns
+            combined_data["std_return"] = std_returns
+            df_combined = pd.DataFrame(combined_data)
+            df_combined.to_csv(combined_csv_filename, index=False)
+            print(f"Saved combined results for config '{config_name}' to {combined_csv_filename}")
 
 if __name__ == "__main__":
     main()
+

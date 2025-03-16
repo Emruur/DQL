@@ -16,7 +16,9 @@ class CartPoleQ(nn.Module):
         """
         super(CartPoleQ, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        
+
+        print("CUDA Available:", torch.cuda.is_available())
+                
         # If more than one hidden layer, add additional layers
         if num_hidden_layers > 1:
             self.hidden_layers = nn.ModuleList(

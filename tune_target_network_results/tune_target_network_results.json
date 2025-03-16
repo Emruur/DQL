@@ -1,0 +1,110 @@
+{
+    "50": {
+        "normalized_aoc": 0.700590843776107,
+        "individual_aocs": [
+            0.7022846282372599,
+            0.7645750208855473,
+            0.6544695071010861,
+            0.6930982456140351,
+            0.6885268170426065
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 50
+        }
+    },
+    "100": {
+        "normalized_aoc": 0.5045864828738512,
+        "individual_aocs": [
+            0.4902835421888053,
+            0.5057929824561403,
+            0.44921570593149546,
+            0.5338632414369257,
+            0.5437769423558897
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 100
+        }
+    },
+    "200": {
+        "normalized_aoc": 0.46971475355054293,
+        "individual_aocs": [
+            0.42348654970760236,
+            0.4266869674185464,
+            0.5744307435254803,
+            0.5196807852965747,
+            0.40428872180451125
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 200
+        }
+    },
+    "500": {
+        "normalized_aoc": 0.38698407685881364,
+        "individual_aocs": [
+            0.33235689223057646,
+            0.4425081035923141,
+            0.41368061821219715,
+            0.35593199665831243,
+            0.3904427736006683
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 500
+        }
+    },
+    "10": {
+        "normalized_aoc": 0.7186436257309942,
+        "individual_aocs": [
+            0.6822367585630743,
+            0.6708313283208021,
+            0.6996219715956558,
+            0.8052462823725982,
+            0.7352817878028405
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 10
+        }
+    },
+    "25": {
+        "normalized_aoc": 0.7615044611528823,
+        "individual_aocs": [
+            0.8428057644110276,
+            0.79573216374269,
+            0.6413063492063491,
+            0.8369659983291563,
+            0.690712030075188
+        ],
+        "config": {
+            "learning_rate": 0.005,
+            "gamma": 0.99,
+            "hidden_dim": 64,
+            "num_hidden_layers": 2,
+            "epsilon": 0.2,
+            "target_updates": 25
+        }
+    }
+}
